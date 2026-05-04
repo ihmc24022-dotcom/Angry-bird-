@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>与 Red 互动 (Talking with Red)</title>
+    
+    <style>
+        /* 清除浏览器默认的边距，让游戏画面铺满整个屏幕 */
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* 防止出现滚动条 */
+            background-color: #87CEEB; /* 天空蓝底色，以防图片加载慢时黑屏 */
+        }
+
+        /* 游戏主容器设置 */
+        #game-screen {
+            width: 100vw;
+            height: 100vh;
+            /* 引入你的背景图片 */
+            background-image: url('Abc.jpg'); 
+            /* 让图片按比例缩放并覆盖整个屏幕 */
+            background-size: cover; 
+            background-position: center bottom; /* 底部对齐，确保草地和箱子完整显示 */
+            background-repeat: no-repeat;
+            
+            /* 设置鼠标样式为小手，提示玩家这里可以点击 */
+            cursor: pointer; 
+            
+            /* Flexbox 布局，方便以后把 Red 的图片放在正中间 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 如果以后你想用代码写提示文字，可以用这个样式。目前文字已经在你的背景图里了 */
+        .hidden-text {
+            display: none; 
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-screen">
+        </div>
+
+    <script>
+        // --- 游戏的 JavaScript 逻辑 (大脑) ---
+
+        // 1. 找到游戏屏幕这个元素
+        const gameScreen = document.getElementById('game-screen');
+
+        // 2. 给屏幕添加一个“点击/触摸”事件监听器
+        gameScreen.addEventListener('click', function() {
+            
+            // 当玩家点击屏幕时，会执行这里的代码
+            // 目前先弹出一个测试窗口，证明点击有效！
+            alert('成功触摸屏幕！接下来可以在这里添加代码，让 Red 出现或者播放声音！');
+            
+            /* * 进阶玩法：你以后可以在这里写代码：
+             * - 播放一段音频: let audio = new Audio('red-voice.mp3'); audio.play();
+             * - 改变背景图片
+             * - 让隐藏的 Red 角色显示出来
+             */
+        });
+    </script>
+
+</body>
+</html>
