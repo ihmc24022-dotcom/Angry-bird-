@@ -20,7 +20,6 @@
 
         #instruction-text { position: absolute; top: 15%; width: 100%; text-align: center; color: white; font-size: 1.2rem; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.6); padding: 0 30px; box-sizing: border-box; z-index: 10; pointer-events: none; transition: opacity 0.5s ease-out; }
         
-        /* Red 图片和视频共用一套定位样式 */
         .red-content { 
             position: absolute; 
             bottom: 22%; 
@@ -34,15 +33,16 @@
 
         #red-bird-image { 
             opacity: 0; visibility: hidden; 
-            transition: opacity 0.2s ease-out, transform 0.2s ease-out; 
+            transition: opacity 0.2s ease-out; 
         }
         
         #red-bird-image.show { opacity: 1; visibility: visible; }
         #red-bird-image.listening { width: 75%; }
 
-        /* 视频初始隐藏 */
+        /* 视频样式：初始透明度为 0 */
         #response-video {
-            display: none;
+            opacity: 0;
+            transition: opacity 0.2s ease-out;
         }
         
         #status-debug { position: absolute; bottom: 5%; width: 100%; text-align: center; color: rgba(255,255,255,0.3); font-size: 0.7rem; z-index: 20; }
@@ -52,11 +52,10 @@
     <div id="game-screen">
         <div id="instruction-text">Touch the Screen to start Talking with Red!</div>
         
-        <!-- Red 的图片 -->
         <img id="red-bird-image" class="red-content" src="red_bird.png" alt="Red Bird">
         
-        <!-- Red 的回应视频 -->
-        <video id="response-video" class="red-content" playsinline>
+        <!-- 视频元素：增加 playsinline 和 muted 以提高兼容性 -->
+        <video id="response-video" class="red-content" playsinline muted>
             <source src="background_removed.webm" type="video/webm">
         </video>
 
@@ -72,8 +71,9 @@
 
         let isGameStarted = false;
         let isSpeaking = false;
+        let isPlayingVideo = false;
         let lastSoundTime = 0;
-        const silenceThreshold = 1000; // 1秒安静后触发视频
+        const silenceThreshold = 1000; 
         let audioContext, analyser, microphone, javascriptNode;
 
         async function startVolumeDetection() {
@@ -92,7 +92,7 @@
                 javascriptNode.connect(audioContext.destination);
 
                 javascriptNode.onaudioprocess = function() {
-                    if (responseVideo.style.display === 'block') return; // 视频播放时暂停检测
+                    if (isPlayingVideo) return; 
 
                     const array = new Uint8Array(analyser.frequencyBinCount);
                     analyser.getByteFrequencyData(array);
@@ -103,16 +103,13 @@
                     const average = values / array.length;
 
                     if (average > 12) {
-                        // 正在说话
                         isSpeaking = true;
                         lastSoundTime = Date.now();
                         redBird.src = 'IMG_2861.png';
                         redBird.classList.add('listening');
                         statusDebug.innerText = "Red 正在听...";
                     } else {
-                        // 安静状态
                         if (isSpeaking && (Date.now() - lastSoundTime > silenceThreshold)) {
-                            // 玩家停止说话超过阈值，触发视频
                             isSpeaking = false;
                             playResponse();
                         } else if (!isSpeaking) {
@@ -128,22 +125,30 @@
         }
 
         function playResponse() {
+            isPlayingVideo = true;
             statusDebug.innerText = "Red 正在回应...";
             
-            // 隐藏图片，显示视频
-            redBird.classList.remove('show');
-            responseVideo.style.display = 'block';
+            // 切换显示：隐藏图片，显示视频
+            redBird.style.opacity = '0';
+            responseVideo.style.opacity = '1';
             
-            // 播放视频
-            responseVideo.play().catch(e => console.log("视频播放失败:", e));
+            responseVideo.currentTime = 0; // 从头开始
+            responseVideo.play().catch(e => {
+                console.log("播放失败:", e);
+                resetToStatic(); // 如果播放失败，切回静态图
+            });
+        }
+
+        function resetToStatic() {
+            isPlayingVideo = false;
+            responseVideo.style.opacity = '0';
+            redBird.style.opacity = '1';
+            redBird.src = 'red_bird.png';
+            statusDebug.innerText = "正在等待声音...";
         }
 
         // 视频播放结束后的处理
-        responseVideo.onended = function() {
-            responseVideo.style.display = 'none';
-            redBird.classList.add('show');
-            statusDebug.innerText = "正在等待声音...";
-        };
+        responseVideo.onended = resetToStatic;
 
         gameScreen.addEventListener('click', function() {
             if (!isGameStarted) {
@@ -151,8 +156,6 @@
                 redBird.classList.add('show');
                 instructionText.style.opacity = '0';
                 startVolumeDetection();
-                
-                // 预加载视频（某些浏览器需要用户点击后才能播放视频）
                 responseVideo.load();
             }
         });
