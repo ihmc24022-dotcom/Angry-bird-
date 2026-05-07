@@ -7,70 +7,46 @@
     
     <style>
         html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden; 
-            background-color: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            overflow: hidden; background-color: #000;
+            display: flex; justify-content: center; align-items: center;
             font-family: 'Arial', sans-serif;
         }
 
         #game-screen {
-            width: 100vw;
-            height: 100vh;
+            width: 100vw; height: 100vh;
             max-width: calc(100vh * (9 / 16));
             max-height: calc(100vw * (16 / 9));
             background-image: url('Abc.jpg'); 
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            cursor: pointer; 
-            position: relative;
+            background-size: cover; background-position: center;
+            cursor: pointer; position: relative;
             box-shadow: 0 0 20px rgba(0,0,0,0.8);
-            overflow: hidden;
         }
 
         #instruction-text {
-            position: absolute;
-            top: 15%;
-            width: 100%;
-            text-align: center;
-            color: white;
-            font-size: 1.2rem;
-            font-weight: bold;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
-            padding: 0 30px;
-            box-sizing: border-box;
-            z-index: 10;
-            pointer-events: none;
+            position: absolute; top: 15%; width: 100%; text-align: center;
+            color: white; font-size: 1.2rem; font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6); padding: 0 30px;
+            box-sizing: border-box; z-index: 10; pointer-events: none;
             transition: opacity 0.5s ease-out;
         }
 
         #red-bird-image {
-            position: absolute;
-            bottom: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 45%;
-            height: auto;
-            opacity: 0;
-            visibility: hidden;
+            position: absolute; bottom: 20%; left: 50%;
+            transform: translateX(-50%); width: 45%; height: auto;
+            opacity: 0; visibility: hidden;
             transition: opacity 0.5s ease-out, transform 0.2s ease-out;
-            z-index: 5;
-            pointer-events: none;
+            z-index: 5; pointer-events: none;
         }
 
-        #red-bird-image.show {
-            opacity: 1;
-            visibility: visible;
-        }
+        #red-bird-image.show { opacity: 1; visibility: visible; }
+        #red-bird-image.listening { width: 55%; }
 
-        #red-bird-image.listening {
-            width: 55%;
+        /* 调试状态显示 */
+        #status-debug {
+            position: absolute; bottom: 5%; width: 100%;
+            text-align: center; color: rgba(255,255,255,0.5);
+            font-size: 0.8rem; z-index: 20; pointer-events: none;
         }
     </style>
 </head>
@@ -79,77 +55,100 @@
     <div id="game-screen">
         <div id="instruction-text">Touch the Screen to start Talking with Red!</div>
         <img id="red-bird-image" src="red_bird.png" alt="Red Bird">
+        <div id="status-debug">等待点击开始...</div>
     </div>
 
     <script>
         const gameScreen = document.getElementById('game-screen');
         const redBird = document.getElementById('red-bird-image');
         const instructionText = document.getElementById('instruction-text');
+        const statusDebug = document.getElementById('status-debug');
 
         let isGameStarted = false;
         let recognition;
+        let listeningTimer;
 
-        // 初始化语音识别函数
+        function setListening(isListening) {
+            if (isListening) {
+                redBird.src = 'IMG_2861.png';
+                redBird.classList.add('listening');
+                statusDebug.innerText = "Red 正在听...";
+                
+                // 清除之前的计时器
+                clearTimeout(listeningTimer);
+                // 2秒后如果没有新声音，切回原图
+                listeningTimer = setTimeout(() => setListening(false), 2000);
+            } else {
+                redBird.src = 'red_bird.png';
+                redBird.classList.remove('listening');
+                statusDebug.innerText = "正在监听麦克风...";
+            }
+        }
+
         function initSpeechRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                alert("您的浏览器不支持语音识别功能，请尝试使用 Chrome。");
+                statusDebug.innerText = "浏览器不支持语音识别";
                 return;
             }
 
             recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true;
+            recognition.lang = 'zh-CN'; // 设置语言
 
-            recognition.onsoundstart = () => {
-                console.log("检测到声音");
-                redBird.src = 'IMG_2861.png';
-                redBird.classList.add('listening');
+            // 1. 当检测到任何语音活动开始时
+            recognition.onspeechstart = () => {
+                console.log("检测到说话");
+                setListening(true);
             };
 
-            recognition.onsoundend = () => {
-                console.log("声音结束");
-                setTimeout(() => {
-                    redBird.src = 'red_bird.png';
-                    redBird.classList.remove('listening');
-                }, 1000);
+            // 2. 当有识别结果时（最可靠的触发方式）
+            recognition.onresult = (event) => {
+                console.log("识别到内容");
+                setListening(true);
             };
 
+            // 3. 错误处理
             recognition.onerror = (event) => {
-                console.error("语音识别错误:", event.error);
-                // 如果是权限问题，提醒用户
-                if (event.error === 'not-allowed') {
-                    alert("请允许麦克风权限以与 Red 互动。");
+                console.error("识别错误:", event.error);
+                statusDebug.innerText = "错误: " + event.error;
+                if (event.error === 'no-speech') {
+                    // 没听到声音是正常的，继续监听
                 }
             };
 
+            // 4. 自动重启监听
             recognition.onend = () => {
-                if (isGameStarted) recognition.start();
+                if (isGameStarted) {
+                    console.log("重新启动监听...");
+                    recognition.start();
+                }
             };
 
             recognition.start();
+            statusDebug.innerText = "正在监听麦克风...";
         }
 
         gameScreen.addEventListener('click', async function() {
             if (!isGameStarted) {
                 try {
-                    // 1. 显式请求麦克风权限
+                    statusDebug.innerText = "正在请求麦克风...";
                     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                     
-                    // 2. 权限获取成功后，开始游戏逻辑
                     isGameStarted = true;
                     redBird.classList.add('show');
                     instructionText.style.opacity = '0';
 
-                    // 3. 初始化语音识别
                     initSpeechRecognition();
                     
-                    // 释放流（我们只需要权限，不需要直接处理音频流，SpeechRecognition 会自己处理）
-                    stream.getTracks().forEach(track => track.stop());
+                    // 保持 stream 开启可能会帮助某些浏览器维持麦克风状态
+                    // 如果还是不行，可以尝试注释掉下面这行
+                    // stream.getTracks().forEach(track => track.stop());
 
                 } catch (err) {
-                    console.error("无法获取麦克风权限:", err);
-                    alert("无法访问麦克风。请确保您已授予权限并正在使用 HTTPS 环境。");
+                    statusDebug.innerText = "麦克风权限被拒绝";
+                    alert("请允许麦克风权限。");
                 }
             }
         });
