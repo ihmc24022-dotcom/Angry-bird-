@@ -6,12 +6,28 @@
     <title>与 Red 互动 (Talking with Red)</title>
     <style>
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; display: flex; justify-content: center; align-items: center; font-family: 'Arial', sans-serif; }
-        #game-screen { width: 100vw; height: 100vh; max-width: calc(100vh * (9 / 16)); max-height: calc(100vw * (16 / 9)); background-image: url('Abc.jpg'); background-size: cover; background-position: center; cursor: pointer; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
-        #instruction-text { position: absolute; top: 15%; width: 100%; text-align: center; color: white; font-size: 1.2rem; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.6); padding: 0 30px; box-sizing: border-box; z-index: 10; pointer-events: none; transition: opacity 0.5s ease-out; }
-        #red-bird-image { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); width: 45%; height: auto; opacity: 0; visibility: hidden; transition: opacity 0.3s ease-out, transform 0.2s ease-out; z-index: 5; pointer-events: none; }
+        
+        /* 游戏主容器：调整为更窄的比例 (9:21) */
+        #game-screen { 
+            width: 100vw; 
+            height: 100vh; 
+            max-width: calc(100vh * (9 / 21)); /* 核心修改：从 9/16 改为 9/21，使其更窄 */
+            max-height: calc(100vw * (21 / 9)); 
+            background-image: url('Abc.jpg'); 
+            background-size: cover; 
+            background-position: center; 
+            cursor: pointer; 
+            position: relative; 
+            box-shadow: 0 0 20px rgba(0,0,0,0.8); 
+        }
+
+        #instruction-text { position: absolute; top: 15%; width: 100%; text-align: center; color: white; font-size: 1.1rem; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.6); padding: 0 30px; box-sizing: border-box; z-index: 10; pointer-events: none; transition: opacity 0.5s ease-out; }
+        
+        #red-bird-image { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); width: 50%; height: auto; opacity: 0; visibility: hidden; transition: opacity 0.3s ease-out, transform 0.2s ease-out; z-index: 5; pointer-events: none; }
         #red-bird-image.show { opacity: 1; visibility: visible; }
-        #red-bird-image.listening { width: 55%; }
-        #status-debug { position: absolute; bottom: 5%; width: 100%; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.8rem; z-index: 20; }
+        #red-bird-image.listening { width: 60%; }
+        
+        #status-debug { position: absolute; bottom: 5%; width: 100%; text-align: center; color: rgba(255,255,255,0.5); font-size: 0.7rem; z-index: 20; }
     </style>
 </head>
 <body>
@@ -52,23 +68,19 @@
                     for (let i = 0; i < array.length; i++) {
                         values += array[i];
                     }
-                    const average = values / array.length; // 计算平均音量
+                    const average = values / array.length;
 
-                    // 阈值判断：如果音量大于 15（你可以根据需要调整这个数字）
                     if (average > 15) {
                         redBird.src = 'IMG_2861.png';
                         redBird.classList.add('listening');
-                        statusDebug.innerText = "Red 正在听 (音量: " + Math.round(average) + ")";
                     } else {
                         redBird.src = 'red_bird.png';
                         redBird.classList.remove('listening');
-                        statusDebug.innerText = "正在监听音量...";
                     }
                 };
-                
-                statusDebug.innerText = "音量检测已启动";
+                statusDebug.innerText = "正在监听声音...";
             } catch (err) {
-                statusDebug.innerText = "无法访问麦克风: " + err;
+                statusDebug.innerText = "无法访问麦克风";
             }
         }
 
