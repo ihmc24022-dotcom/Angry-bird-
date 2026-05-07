@@ -7,25 +7,28 @@
     <style>
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #000; display: flex; justify-content: center; align-items: center; font-family: 'Arial', sans-serif; }
         
-        /* 9:21 修长屏幕比例 */
+        /* 调整为 9:16 比例，与截图一致 */
         #game-screen { 
             width: 100vw; height: 100vh; 
-            max-width: calc(100vh * (9 / 21)); 
-            max-height: calc(100vw * (21 / 9)); 
+            max-width: calc(100vh * (9 / 16)); 
+            max-height: calc(100vw * (16 / 9)); 
             background-image: url('Abc.jpg'); 
-            background-size: cover; background-position: center; 
+            background-size: 100% 100%; /* 确保背景图完全填满容器 */
+            background-position: center; 
             cursor: pointer; position: relative; 
             box-shadow: 0 0 20px rgba(0,0,0,0.8); 
         }
 
-        #instruction-text { position: absolute; top: 15%; width: 100%; text-align: center; color: white; font-size: 1.1rem; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.6); padding: 0 30px; box-sizing: border-box; z-index: 10; pointer-events: none; transition: opacity 0.5s ease-out; }
+        #instruction-text { position: absolute; top: 15%; width: 100%; text-align: center; color: white; font-size: 1.2rem; font-weight: bold; text-shadow: 1px 1px 3px rgba(0,0,0,0.6); padding: 0 30px; box-sizing: border-box; z-index: 10; pointer-events: none; transition: opacity 0.5s ease-out; }
         
         #red-bird-image { 
             position: absolute; 
-            bottom: 35%; /* 位置调高 */
+            /* 调整位置：距离底部 22%，使其坐落在草地上 */
+            bottom: 22%; 
             left: 50%; 
             transform: translateX(-50%); 
-            width: 75%; /* 尺寸调大 */
+            /* 调整大小：宽度占 65% */
+            width: 65%; 
             height: auto; 
             opacity: 0; visibility: hidden; 
             transition: opacity 0.2s ease-out, transform 0.2s ease-out; 
@@ -33,7 +36,7 @@
         }
         
         #red-bird-image.show { opacity: 1; visibility: visible; }
-        #red-bird-image.listening { width: 85%; } /* 说话时稍微放大 */
+        #red-bird-image.listening { width: 75%; } /* 说话时稍微放大 */
         
         #status-debug { position: absolute; bottom: 5%; width: 100%; text-align: center; color: rgba(255,255,255,0.3); font-size: 0.7rem; z-index: 20; }
     </style>
@@ -78,18 +81,17 @@
                     }
                     const average = values / array.length;
 
-                    // 音量感应逻辑
-                    if (average > 12) { // 调低了阈值，使其更灵敏
-                        redBird.src = 'IMG_2861.png'; // 切换到倾听图
+                    if (average > 12) {
+                        redBird.src = 'IMG_2861.png';
                         redBird.classList.add('listening');
                     } else {
-                        redBird.src = 'red_bird.png'; // 切回原图
+                        redBird.src = 'red_bird.png';
                         redBird.classList.remove('listening');
                     }
                 };
                 statusDebug.innerText = "正在监听声音...";
             } catch (err) {
-                statusDebug.innerText = "无法访问麦克风，请确保使用 HTTPS 访问";
+                statusDebug.innerText = "无法访问麦克风";
             }
         }
 
