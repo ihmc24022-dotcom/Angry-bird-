@@ -69,9 +69,8 @@
             visibility: visible;
         }
 
-        /* 倾听时的微调：因为倾听图带手和耳朵，可能需要稍微调大一点或调整位置 */
         #red-bird-image.listening {
-            width: 55%; /* 倾听时稍微放大，因为图片包含了手部 */
+            width: 55%;
         }
     </style>
 </head>
@@ -88,52 +87,69 @@
         const instructionText = document.getElementById('instruction-text');
 
         let isGameStarted = false;
-
-        // 初始化语音识别
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
 
-        if (SpeechRecognition) {
+        // 初始化语音识别函数
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("您的浏览器不支持语音识别功能，请尝试使用 Chrome。");
+                return;
+            }
+
             recognition = new SpeechRecognition();
-            recognition.continuous = true; // 持续监听
-            recognition.interimResults = true; // 获取中间结果
+            recognition.continuous = true;
+            recognition.interimResults = true;
 
-            // 当检测到声音开始
             recognition.onsoundstart = () => {
-                if (isGameStarted) {
-                    redBird.src = 'IMG_2861.png'; // 切换到倾听图片
-                    redBird.classList.add('listening');
+                console.log("检测到声音");
+                redBird.src = 'IMG_2861.png';
+                redBird.classList.add('listening');
+            };
+
+            recognition.onsoundend = () => {
+                console.log("声音结束");
+                setTimeout(() => {
+                    redBird.src = 'red_bird.png';
+                    redBird.classList.remove('listening');
+                }, 1000);
+            };
+
+            recognition.onerror = (event) => {
+                console.error("语音识别错误:", event.error);
+                // 如果是权限问题，提醒用户
+                if (event.error === 'not-allowed') {
+                    alert("请允许麦克风权限以与 Red 互动。");
                 }
             };
 
-            // 当声音结束或识别完成
-            recognition.onsoundend = () => {
-                if (isGameStarted) {
-                    // 延迟一小会儿切回原图，效果更自然
-                    setTimeout(() => {
-                        redBird.src = 'red_bird.png';
-                        redBird.classList.remove('listening');
-                    }, 1000);
-                }
-            };
-            
-            // 容错处理：如果识别停止了，自动重新开始
             recognition.onend = () => {
                 if (isGameStarted) recognition.start();
             };
+
+            recognition.start();
         }
 
-        gameScreen.addEventListener('click', function() {
+        gameScreen.addEventListener('click', async function() {
             if (!isGameStarted) {
-                isGameStarted = true;
-                redBird.classList.add('show');
-                instructionText.style.opacity = '0';
+                try {
+                    // 1. 显式请求麦克风权限
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    
+                    // 2. 权限获取成功后，开始游戏逻辑
+                    isGameStarted = true;
+                    redBird.classList.add('show');
+                    instructionText.style.opacity = '0';
 
-                // 启动语音识别
-                if (recognition) {
-                    recognition.start();
-                } else {
-                    alert("您的浏览器不支持语音识别功能，请尝试使用 Chrome。");
+                    // 3. 初始化语音识别
+                    initSpeechRecognition();
+                    
+                    // 释放流（我们只需要权限，不需要直接处理音频流，SpeechRecognition 会自己处理）
+                    stream.getTracks().forEach(track => track.stop());
+
+                } catch (err) {
+                    console.error("无法获取麦克风权限:", err);
+                    alert("无法访问麦克风。请确保您已授予权限并正在使用 HTTPS 环境。");
                 }
             }
         });
